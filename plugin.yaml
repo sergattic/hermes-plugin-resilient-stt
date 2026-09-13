@@ -1,0 +1,41 @@
+name: resilient-stt
+version: 1.0.0
+description: >
+  Resilient speech-to-text backend — transparent per-call failover across
+  xAI Grok -> Groq (whisper-large-v3, not the weaker default turbo) -> OpenAI
+  (gpt-4o-transcribe) -> DeepInfra (Voxtral), so a down/rate-limited/unavailable
+  STT provider never fails a transcription outright. Cost-ordered (owner
+  decision 2026-09-13): free-via-subscription rungs first, paid rungs held in
+  reserve for when the free ones are actually unavailable, not tried first for
+  quality reasons.
+
+  Hermes's native STT dispatch has NO built-in fallback chain (unlike the main
+  chat model's fallback_providers) — an explicit stt.provider is honored with
+  no retry if unavailable. This plugin exists specifically to close that gap
+  via Hermes's TranscriptionProvider plugin ABC (agent/transcription_provider.py),
+  a real extension point that did not exist when velis originally picked a
+  single pinned provider (xai) in July 2026 and accepted no-fallback as a
+  Hermes limitation at the time.
+
+  Language handling: all 4 rungs auto-detect rather than force a language —
+  matches velis's own established finding that forcing xAI to one of EN/UK
+  breaks detection of the other; Groq/OpenAI/DeepInfra's underlying handlers
+  don't accept a language hint at all. A language hint passed by the caller is
+  still forwarded to the xAI rung specifically (the one rung that supports it),
+  every other rung ignores it and auto-detects.
+
+  Reuses Hermes's own internal provider implementations
+  (tools.transcription_tools._transcribe_xai/_transcribe_groq/_transcribe_openai/
+  _transcribe_deepinfra) rather than reimplementing 4 providers' HTTP/auth/retry
+  logic from scratch — including xAI's OAuth-credential-refresh-and-retry-once
+  behavior on 401/403, which would be a real correctness risk to duplicate badly.
+  Deliberate trade-off, same shape as the SnapTrade SDK patch precedent: these
+  are underscore-prefixed "private" Hermes internals, not a stable plugin API,
+  so a future Hermes upgrade could change their signature without notice. If
+  `hermes plugins doctor resilient-stt` or a live transcription starts failing
+  after an upgrade, check this first before assuming the API keys are wrong.
+author: velis / Claude Code
+license: MIT
+kind: backend
+provides_stt_providers:
+  - resilient-stt
