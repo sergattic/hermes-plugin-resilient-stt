@@ -24,12 +24,25 @@ logger = logging.getLogger(__name__)
 # Cost-ordered per owner decision 2026-09-13: free-via-subscription rungs
 # first, paid rungs held in reserve. Each entry: (rung_id, model, env_var,
 # provider_id_for_key_resolution, display_label).
+#
+# Mistral rung, 2026-09-14 fix (issue #1, caught by vsv-lswb-2t-hermes's
+# independent verification): "voxtral-small-latest" is NOT valid on Mistral's
+# /v1/audio/transcriptions endpoint — that's a general multimodal CHAT model
+# id, not a transcription model id, and the API rejects it with a real
+# HTTP 400 "Invalid model" on every call. Because the ladder catches
+# per-rung exceptions and advances silently, this was dead code that never
+# surfaced as an error to anyone — it just always fell through as if the
+# rung were simply unavailable. Only "voxtral-mini-latest" (Voxtral Mini
+# Transcribe V2) is a real transcription-endpoint model id. If you're
+# tempted to "upgrade" this to a bigger Voxtral name later, verify it
+# against Mistral's transcription endpoint specifically, not their chat
+# model list — they are different catalogs.
 _LADDER = [
     ("xai", None, "XAI_API_KEY", "xai", "xAI Grok (free via OAuth sub)"),
     ("groq", "whisper-large-v3", "GROQ_API_KEY", "groq", "Groq (whisper-large-v3, NOT turbo)"),
     ("openai", "gpt-4o-transcribe", "OPENAI_API_KEY", "openai", "OpenAI gpt-4o-transcribe"),
     ("deepinfra", None, "DEEPINFRA_API_KEY", "deepinfra", "DeepInfra Voxtral"),
-    ("mistral", "voxtral-small-latest", "MISTRAL_API_KEY", "mistral", "Mistral Voxtral (added 2026-09-14, last resort)"),
+    ("mistral", "voxtral-mini-latest", "MISTRAL_API_KEY", "mistral", "Mistral Voxtral Mini Transcribe V2 (added 2026-09-14, last resort)"),
 ]
 
 

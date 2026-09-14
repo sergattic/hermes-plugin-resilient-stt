@@ -22,9 +22,16 @@ a single provider that tries each backend in order internally.
 3. **OpenAI**, `gpt-4o-transcribe` — needs a genuine OpenAI **Platform** API key
    (`OPENAI_API_KEY`); a ChatGPT/Codex subscription does not grant this.
 4. **DeepInfra**, Voxtral.
-5. **Mistral**, `voxtral-small-latest` — added 2026-09-14, appended at the end without a
-   cost/quality comparison against the other paid rungs; genuinely just "last resort" by
-   default, not a considered ranking.
+5. **Mistral**, `voxtral-mini-latest` (Voxtral Mini Transcribe V2) — added 2026-09-14,
+   appended at the end without a cost/quality comparison against the other paid rungs;
+   genuinely just "last resort" by default, not a considered ranking. Real per-minute
+   pricing (~$0.003/min direct from Mistral) is actually cheaper than DeepInfra's
+   larger Voxtral-Small-24B variant used in rung 4 — flagged, not yet reordered pending
+   an owner decision, since DeepInfra's exact per-model rate wasn't cleanly confirmed
+   either. **Fixed 2026-09-14 (issue #1, caught by independent verification, not by
+   testing this repo's own author):** the model id was originally `voxtral-small-latest`,
+   which is a chat model id, not a transcription-endpoint id — every call failed with a
+   real HTTP 400 and silently fell through, since the ladder swallows per-rung errors.
 
 Reorder `_LADDER` in `provider.py` if your own cost/quality priorities differ.
 

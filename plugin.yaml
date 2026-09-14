@@ -1,17 +1,26 @@
 name: resilient-stt
-version: 1.1.0
+version: 1.1.1
 description: >
   Resilient speech-to-text backend — transparent per-call failover across
   xAI Grok -> Groq (whisper-large-v3, not the weaker default turbo) -> OpenAI
-  (gpt-4o-transcribe) -> DeepInfra (Voxtral) -> Mistral (Voxtral, added
-  2026-09-14, default last-resort position), so a down/rate-limited/
-  unavailable STT provider never fails a transcription outright. Cost-ordered
-  (owner decision 2026-09-13): free-via-subscription rungs first, paid rungs
-  held in reserve for when the free ones are actually unavailable, not tried
-  first for quality reasons. Mistral was appended at the end rather than
-  slotted in by quality — no cost/quality comparison was done against the
-  other paid rungs before adding it; reorder `_LADDER` in provider.py if a
-  different position is wanted.
+  (gpt-4o-transcribe) -> DeepInfra (Voxtral) -> Mistral (Voxtral Mini
+  Transcribe V2, added 2026-09-14, default last-resort position), so a
+  down/rate-limited/unavailable STT provider never fails a transcription
+  outright. Cost-ordered (owner decision 2026-09-13): free-via-subscription
+  rungs first, paid rungs held in reserve for when the free ones are actually
+  unavailable, not tried first for quality reasons. Mistral was appended at
+  the end rather than slotted in by quality — no cost/quality comparison was
+  done against the other paid rungs before adding it; reorder `_LADDER` in
+  provider.py if a different position is wanted (flagged: Mistral's real
+  per-minute rate is likely cheaper than rung 4's DeepInfra tier, not yet
+  reordered pending an owner decision).
+
+  1.1.1 fix (issue #1, caught by independent verification from a peer
+  session, not by the author's own testing): the Mistral rung's model id was
+  `voxtral-small-latest`, a CHAT model id, not valid on the transcription
+  endpoint — every call got a real HTTP 400 and silently fell through
+  because the ladder swallows per-rung errors. Corrected to
+  `voxtral-mini-latest`, the only real transcription-endpoint model id.
 
   Hermes's native STT dispatch has NO built-in fallback chain (unlike the main
   chat model's fallback_providers) — an explicit stt.provider is honored with
