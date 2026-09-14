@@ -29,6 +29,7 @@ _LADDER = [
     ("groq", "whisper-large-v3", "GROQ_API_KEY", "groq", "Groq (whisper-large-v3, NOT turbo)"),
     ("openai", "gpt-4o-transcribe", "OPENAI_API_KEY", "openai", "OpenAI gpt-4o-transcribe"),
     ("deepinfra", None, "DEEPINFRA_API_KEY", "deepinfra", "DeepInfra Voxtral"),
+    ("mistral", "voxtral-small-latest", "MISTRAL_API_KEY", "mistral", "Mistral Voxtral (added 2026-09-14, last resort)"),
 ]
 
 
@@ -102,6 +103,7 @@ class ResilientSTTProvider(TranscriptionProvider):
                 {"key": "GROQ_API_KEY", "prompt": "Groq API key", "url": "https://console.groq.com/keys"},
                 {"key": "OPENAI_API_KEY", "prompt": "OpenAI API key", "url": "https://platform.openai.com/api-keys"},
                 {"key": "DEEPINFRA_API_KEY", "prompt": "DeepInfra API key", "url": "https://deepinfra.com/dash/api_keys"},
+                {"key": "MISTRAL_API_KEY", "prompt": "Mistral API key", "url": "https://console.mistral.ai/api-keys"},
             ],
         }
 
@@ -118,6 +120,7 @@ class ResilientSTTProvider(TranscriptionProvider):
             _transcribe_groq,
             _transcribe_openai,
             _transcribe_deepinfra,
+            _transcribe_mistral,
         )
 
         prompt = extra.get("prompt")
@@ -145,6 +148,8 @@ class ResilientSTTProvider(TranscriptionProvider):
                     result = _transcribe_openai(file_path, default_model, language=None, prompt=prompt)
                 elif rung_id == "deepinfra":
                     result = _transcribe_deepinfra(file_path, default_model or "", language=None, prompt=prompt)
+                elif rung_id == "mistral":
+                    result = _transcribe_mistral(file_path, default_model or "", language=None, prompt=prompt)
                 else:  # pragma: no cover — defensive, ladder table is static
                     continue
             except Exception as exc:  # noqa: BLE001 — a rung must never take the whole ladder down
@@ -167,5 +172,5 @@ class ResilientSTTProvider(TranscriptionProvider):
             "transcript": "",
             "provider": "resilient-stt",
             "error": "All STT rungs failed or unavailable: " + "; ".join(errors) if errors
-            else "No STT rung has credentials configured (XAI_API_KEY/GROQ_API_KEY/OPENAI_API_KEY/DEEPINFRA_API_KEY all unset).",
+            else "No STT rung has credentials configured (XAI_API_KEY/GROQ_API_KEY/OPENAI_API_KEY/DEEPINFRA_API_KEY/MISTRAL_API_KEY all unset).",
         }
